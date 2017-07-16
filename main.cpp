@@ -53,12 +53,59 @@ int main(void){
 		string fps = to_string((int)video.get(CV_CAP_PROP_FPS));
 		putText(frame, "FPS : " + fps, Point(10, 40), 2, 1.2, Scalar(0, 255, 0));
 
+		//HSV
+		Mat img_hsv, img_binary;
+		//HSV로 변환
+		cvtColor(frame, img_hsv, COLOR_BGR2HSV);
+
+
+		//지정한 HSV 범위를 이용하여 영상을 이진화
+		inRange(img_hsv, Scalar(LowH, LowS, LowV), Scalar(HighH, HighS, HighV), img_binary);
+
+
+		//morphological opening 작은 점들을 제거 
+		erode(img_binary, img_binary, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+		dilate(img_binary, img_binary, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+
+
+		//morphological closing 영역의 구멍 메우기 
+		dilate(img_binary, img_binary, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+		erode(img_binary, img_binary, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+
+
+		//라벨링 
+		Mat img_labels, stats, centroids;
+		int numOfLables = connectedComponentsWithStats(img_binary, img_labels,
+			stats, centroids, 8, CV_32S);
+
+
+		//영역박스 그리기
+		int max = -1, idx = 0;
+		for (int j = 1; j < numOfLables; j++) {
+			int area = stats.at<int>(j, CC_STAT_AREA);
+			if (max < area)
+			{
+				max = area;
+				idx = j;
+			}
+		}
+
+		int left = stats.at<int>(idx, CC_STAT_LEFT);
+		int top = stats.at<int>(idx, CC_STAT_TOP);
+		int width = stats.at<int>(idx, CC_STAT_WIDTH);
+		int height = stats.at<int>(idx, CC_STAT_HEIGHT);
+
+
+		rectangle(frame, Point(left, top), Point(left + width, top + height),
+			Scalar(0, 0, 255), 1);
+
 		//houghFrame = houghLine(frame);
 		//kmeansFrame = kmeansClustering(frame);
 		//ppFrame = preprocessing(frame);
-		imshow("PMS", frame);
 
-		//Pushing esc key is terminate
+		imshow("PMS", frame);
+		imshow("이진화 영상", img_binary);
+		//Pushing ESC key is terminate
 		if (waitKey(DELAYMILL) == ESC)
 			break; 
 	}
