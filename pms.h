@@ -13,6 +13,13 @@
 #define DEG2RAD PI/180
 #define K 2
 
+#define LOWH 0
+#define HIGHH 70
+#define LOWS 21 
+#define HIGHS 255
+#define LOWV 31
+#define HIGHV 255
+
 using namespace std;
 using namespace cv;
 
@@ -21,7 +28,7 @@ using namespace cv;
 Mat houghLine(Mat srcFrame) {
 	//Exception handling (Image is Empty)
 	if (srcFrame.empty() == true) {
-		cout << "Frame is Empty" << endl;
+		cout << "srcFrame is Empty" << endl;
 	}
 
 	Mat dstFrame, grayFrame;
@@ -29,16 +36,17 @@ Mat houghLine(Mat srcFrame) {
 	cvtColor(srcFrame, grayFrame, COLOR_BGR2GRAY);
 
 	//1. GaussianBular and Canny Edge Detection
-	Mat edgeFrame;
+	Mat edgesrcFrame;
 	GaussianBlur(grayFrame, grayFrame, Size(9, 9), 1.0);
-	Canny(grayFrame, edgeFrame, 150, 350);
+	Canny(grayFrame, edgesrcFrame, 150, 350);
 
 
 	//2. Mapping of edge points to the Hough space and storage in an accumulator
 	/*vector<Vec4i> lines;
 	HoughLinesP()*/
-	return edgeFrame;
+	return edgesrcFrame;
 }
+
 Mat kmeansClustering(Mat srcFrame) {
 	
 	//배열에 8bit uchar type으로 저장되어 있음.
@@ -91,20 +99,30 @@ Mat kmeansClustering(Mat srcFrame) {
 	return dstFrame;
 }
 
-double calculateFPS() {
-	// method 2
-	double fps = 0;
-	int64 t = getTickCount(); //측정 시작 시간
-
-    // 측정 필요한 구간
-	t = getTickCount() - t; //측정 완료 시간
-	fps = 1000 / t / getTickFrequency(); // fps 계산
-
-	return fps;
-}
-
 Mat preMasking(Mat srcFrame) {
-	return srcFrame;
+	Mat dstFrame;
+	
+	//Specific HSV Removal
+	Mat hsvFrame, binaryFrame;
+
+	//1. convert to HSV
+	cvtColor(srcFrame, hsvFrame, COLOR_BGR2HSV);
+
+	//2. hsv frame to binary frame
+	inRange(hsvFrame, Scalar(LOWH, LOWS, LOWV), Scalar(HIGHH, HIGHS, HIGHV), binaryFrame);
+
+
+	//3. erode and dilate to binary frame
+	erode(binaryFrame, binaryFrame, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	dilate(binaryFrame, binaryFrame, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+
+	dilate(binaryFrame, binaryFrame, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+	erode(binaryFrame, binaryFrame, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+
+	//4. not bitwise
+	bitwise_not(binaryFrame, binaryFrame);
+
+	return binaryFrame;
 }
 
 Mat preprocessing(Mat srcFrame){
@@ -116,4 +134,79 @@ Mat preprocessing(Mat srcFrame){
 
 	return dstFrame;
 }
+
+Mat drawCircle(Mat srcFrame) {
+	//장애인 주차장 점
+	circle(srcFrame, Point(345, 300), 3, Scalar(0, 0, 255), 1);
+	circle(srcFrame, Point(397, 303), 3, Scalar(0, 0, 255), 1);
+	circle(srcFrame, Point(402, 355), 3, Scalar(0, 0, 255), 1);
+	circle(srcFrame, Point(343, 347), 3, Scalar(0, 0, 255), 1);
+
+	//왼쪽 첫번째 점
+	circle(srcFrame, Point(158, 450), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 두번째 점
+	circle(srcFrame, Point(171, 420), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 세번째 점
+	circle(srcFrame, Point(189, 382), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 네번째 점
+	circle(srcFrame, Point(204, 352), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 다섯번째 점
+	circle(srcFrame, Point(215, 326), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 여섯번째 점
+	circle(srcFrame, Point(226, 304), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 일곱번째 점
+	circle(srcFrame, Point(237, 283), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 여덟번째 점
+	circle(srcFrame, Point(245, 266), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 아홉번째 점
+	circle(srcFrame, Point(252, 251), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열번째 점
+	circle(srcFrame, Point(257, 237), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열한번째 점
+	circle(srcFrame, Point(264, 225), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열두번째 점
+	circle(srcFrame, Point(269, 214), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열세번째 점
+	circle(srcFrame, Point(272, 204), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열네번째 점
+	circle(srcFrame, Point(278, 194), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열다섯번째 점
+	circle(srcFrame, Point(281, 186), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열여섯번째 점
+	circle(srcFrame, Point(285, 177), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열일곱번째 점
+	circle(srcFrame, Point(287, 171), 3, Scalar(0, 0, 225), 1);
+	//왼쪽 열여덟번째 점
+	circle(srcFrame, Point(291, 165), 3, Scalar(0, 0, 225), 1);
+
+	//장애인주차장 오른쪽 첫번째 주차 점
+	circle(srcFrame, Point(449, 359), 3, Scalar(0, 0, 225), 1); // 아래 점
+	circle(srcFrame, Point(437, 305), 3, Scalar(0, 0, 225), 1); //위 점
+
+															 //장애인주차장 오른쪽 두번째 주차 점
+	circle(srcFrame, Point(495, 363), 3, Scalar(0, 0, 225), 1); // 아래 점
+	circle(srcFrame, Point(477, 307), 3, Scalar(0, 0, 225), 1); //위 점
+
+															 //장애인주차장 오른쪽 세번째 주차 점
+	circle(srcFrame, Point(542, 367), 3, Scalar(0, 0, 225), 1); // 아래 점
+	circle(srcFrame, Point(518, 309), 3, Scalar(0, 0, 225), 1); //위 점
+
+															 //장애인주차장 오른쪽 네번째 주차 점
+	circle(srcFrame, Point(590, 370), 3, Scalar(0, 0, 225), 1); // 아래 점
+	circle(srcFrame, Point(563, 311), 3, Scalar(0, 0, 225), 1); //위 점
+
+															 //장애인주차장 오른쪽 다섯번째 주차 점
+	circle(srcFrame, Point(636, 374), 3, Scalar(0, 0, 225), 1); // 아래 점
+	circle(srcFrame, Point(605, 314), 3, Scalar(0, 0, 225), 1); //위 점
+
+	return srcFrame;
+}
+
+void mouseClickFun(int event, int x, int y, int flags, void* userdata){
+
+	if (event == EVENT_LBUTTONDOWN){
+		cout << "좌표 = (" << x << ", " << y << ")" << endl;
+	}
+}
+
 #endif
