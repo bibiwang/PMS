@@ -48,11 +48,6 @@ int main(void) {
 	while (true) {
 		video >> frame;
 
-		//돌아간거
-		/*Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
-		Mat rot_matrix = getRotationMatrix2D(src_center, 180, 1.0);
-		warpAffine(frame, frame, rot_matrix, frame.size());*/
-
 		//Rotate
 		//Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
 		//Mat rot_matrix = getRotationMatrix2D(src_center, 180, 1.0);
