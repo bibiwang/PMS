@@ -48,6 +48,11 @@ int main(void) {
 	while (true) {
 		video >> frame;
 
+		//돌아간거
+		/*Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
+		Mat rot_matrix = getRotationMatrix2D(src_center, 180, 1.0);
+		warpAffine(frame, frame, rot_matrix, frame.size());*/
+
 		//Rotate
 		//Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
 		//Mat rot_matrix = getRotationMatrix2D(src_center, 180, 1.0);
@@ -80,7 +85,10 @@ int main(void) {
 		/*rectangle(frame, Point(left, top), Point(left + width, top + height),
 			Scalar(0, 0, 255), 1);*/
 		
+		//수동으로 위치확인
 		frame = drawCircle(frame);
+		
+		//전처리
 		frame = preprocessing(frame);
 
 		//FPS 
