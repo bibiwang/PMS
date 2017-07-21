@@ -7,7 +7,7 @@
 #include <time.h>
 #include <vector>
 
-#define FILENAME "rainy1.mp4"
+#define FILENAME "sunny1.mp4"
 #define ESC 27
 #define DELAYMILL 20
 #define PI 3.14159265

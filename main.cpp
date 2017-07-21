@@ -48,6 +48,8 @@ int main(void) {
 	while (true) {
 		video >> frame;
 
+		resize(frame, frame, Size(800, 600), 0, 0, CV_INTER_LINEAR);
+
 		//Rotate
 		//Point2f src_center(frame.cols / 2.0F, frame.rows / 2.0F);
 		//Mat rot_matrix = getRotationMatrix2D(src_center, 180, 1.0);
@@ -93,9 +95,9 @@ int main(void) {
 		//frame = carHaarCascadeFun(frame);
 
 		//HoughLine
-		//frame = houghLine(frame);
-		Mat image = imread("test.PNG", 1);
-		frame = houghLine(image);
+		frame = houghLine(frame);
+		/*Mat image = imread("test2.PNG", 1);
+		frame = houghLine(image)*/;
 
 		imshow("PMS", frame);
 		//imshow("이진화 영상", img_binary);
