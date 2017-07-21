@@ -90,6 +90,13 @@ int main(void) {
 		string fps = to_string((int)video.get(CV_CAP_PROP_FPS));
 		putText(frame, "FPS : " + fps, Point(10, 40), 2, 1.2, Scalar(0, 255, 0));
 
+		//frame = carHaarCascadeFun(frame);
+
+		//HoughLine
+		//frame = houghLine(frame);
+		Mat image = imread("test.PNG", 1);
+		frame = houghLine(image);
+
 		imshow("PMS", frame);
 		//imshow("이진화 영상", img_binary);
 

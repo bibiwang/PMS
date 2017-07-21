@@ -5,6 +5,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <time.h>
+#include <vector>
 
 #define FILENAME "rainy1.mp4"
 #define ESC 27
@@ -20,31 +21,135 @@
 #define LOWV 31
 #define HIGHV 255
 
+#define CARCASCADENAME "C:\\opencv\\build\\etc\\haarcascades\\haarcascade_cars.xml"
+
 using namespace std;
 using namespace cv;
 
+typedef struct HoughLineInfo {
+	vector<unsigned int> iAngle;
+	vector<double> dRho;
+}HoughLineInfo;
 
 //DO NOT USE FUNCTION
 Mat houghLine(Mat srcFrame) {
+
 	//Exception handling (Image is Empty)
 	if (srcFrame.empty() == true) {
 		cout << "srcFrame is Empty" << endl;
 	}
 
-	Mat dstFrame, grayFrame;
-	dstFrame = srcFrame.clone();
-	cvtColor(srcFrame, grayFrame, COLOR_BGR2GRAY);
-
-	//1. GaussianBular and Canny Edge Detection
-	Mat edgesrcFrame;
-	GaussianBlur(grayFrame, grayFrame, Size(9, 9), 1.0);
-	Canny(grayFrame, edgesrcFrame, 150, 350);
+	Mat dstFrame;
+	srcFrame.copyTo(dstFrame);
+	// 1.  Edge detection, e.g. using the Canny edge detector.
+	Mat edgeFrame;
+	GaussianBlur(srcFrame, srcFrame, Size(9, 9), 1.0);
+	Canny(srcFrame, edgeFrame, 100, 150);
 
 
 	//2. Mapping of edge points to the Hough space and storage in an accumulator
-	/*vector<Vec4i> lines;
-	HoughLinesP()*/
-	return edgesrcFrame;
+
+	const unsigned int kAngleSize = 180;
+	const unsigned int kDistMax = sqrt((edgeFrame.cols*edgeFrame.cols) + (edgeFrame.rows*edgeFrame.rows)) + 1;
+	const unsigned int kDistanceSize = kDistMax * 2;
+	const unsigned int kThresHoldForLine = 100;
+
+	unsigned int* pNvote = new unsigned int[kAngleSize*kDistanceSize];
+	memset(pNvote, 0, (kAngleSize*kDistanceSize) * sizeof(unsigned int));
+
+	double lukCos[180];
+	double lukSin[180];
+	unsigned int lukAngleIdx[180];
+
+	for (int i = 0; i < kAngleSize; i++)
+	{
+		double angle = (double)i*DEG2RAD;
+
+		lukCos[i] = cos(angle);
+		lukSin[i] = sin(angle);
+		lukAngleIdx[i] = i*kDistanceSize;
+	}
+
+	unsigned char* ucMatEdgeData = edgeFrame.data;
+	for (int y = 0; y < edgeFrame.rows; y++)
+	{
+		for (int x = 0; x < edgeFrame.cols; x++)
+		{
+			if (*ucMatEdgeData++ == 0)continue;
+
+			for (unsigned int j = 0; j < kAngleSize; j++)
+			{
+				double rho = lukCos[j] * x + lukSin[j] * y;
+				rho += (double)kDistMax;
+
+				pNvote[lukAngleIdx[j] + (int)(rho + 0.5)]++;
+			}
+		}
+	}
+
+	//3. Interpretation of the accumulator to yield lines of infinite length. 
+	//The interpretation is done by thresholding and possibly other constraints.
+
+	Point ptA;
+	Point ptB;
+
+	HoughLineInfo lineVec;
+
+	vector<Vec2f> linesVec;
+
+	for (int i = 0; i < 180; i++)
+		for (int j = 0; j < kDistanceSize; j++)
+		{
+			int nVote = pNvote[lukAngleIdx[i] + j];
+			if (nVote >= kThresHoldForLine)
+			{
+				bool isTrueLine = true;
+
+				for (int dAngle = -1; dAngle <= 1 && isTrueLine; dAngle++)
+				{
+					if (i + dAngle < 0)continue;
+					if (i + dAngle >= kAngleSize)break;
+
+					for (int dRho = -1; dRho <= 1 && isTrueLine; dRho++)
+					{
+						if (j + dRho < 0)continue;
+						if (j + dRho >= kDistanceSize)break;
+
+						if (pNvote[lukAngleIdx[i + dAngle] + (j + dRho)] > nVote)isTrueLine = false;
+					}
+				}
+
+				if (isTrueLine == false) continue;
+
+				lineVec.iAngle.push_back(i);
+				lineVec.dRho.push_back(j - (int)kDistMax);
+			}
+		}
+
+	int nLineVecSize = lineVec.dRho.size();
+	for (int i = 0; i < nLineVecSize; i++)
+	{
+		int angle = lineVec.iAngle[i];
+
+		double cX = lukCos[angle];
+		double cY = lukSin[angle];
+
+		double rho = lineVec.dRho[i];
+
+		double x0 = cX*rho;
+		double y0 = cY*rho;
+
+		ptA.x = cvRound(x0 + 1000. * (-cY));
+		ptA.y = cvRound(y0 + 1000. * (cX));
+		ptB.x = cvRound(x0 - 1000. * (-cY));
+		ptB.y = cvRound(y0 - 1000. * (cX));
+
+		line(dstFrame, ptA, ptB, Scalar(0, 255, 0), 1);
+	}
+
+	delete[] pNvote;
+
+	return dstFrame;
 }
 
 Mat kmeansClustering(Mat srcFrame) {
@@ -201,6 +306,30 @@ Mat drawCircle(Mat srcFrame) {
 
 	return srcFrame;
 }
+
+//Mat carHaarCascadeFun(Mat srcFrame) {
+//	//Mat dstFrame;
+//
+//	//srcFrame.copyTo(dstFrame);
+//
+//	//// Load Face cascade (.xml file)
+//	//CascadeClassifier carCascade;
+//	//if(!carCascade.load(CARCASCADENAME))
+//	//	cout << "Error loading car cascade\n" << endl;
+//	//
+//	//// Detect cars
+//	//vector<Rect> cars;
+//	//carCascade.detectMultiScale(srcFrame, cars, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+//
+//	//// Draw circles on the detected faces
+//	///*for (int i = 0; i < cars.size(); i++){
+//	//	Point center(cars[i].x + cars[i].width*0.5, cars[i].y + cars[i].height*0.5);
+//	//	ellipse(dstFrame, center, Size(cars[i].width*0.5, cars[i].height*0.5), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
+//	//}*/
+//
+//	//return dstFrame;
+//
+//}
 
 void mouseClickFun(int event, int x, int y, int flags, void* userdata){
 
